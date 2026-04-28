@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f5f7fa;
+            padding: 0;
+        }
+        .search-bar {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .table-container {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .status-active {
+            background: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+        }
+        .status-inactive {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 15px 30px;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            pointer-events: auto;
+        }
+        .toast-success {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: #fff;
+        }
+        .toast-error {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: #fff;
+        }
+        .toast-info {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: #fff;
+        }
+        .toast-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: #fff;
+        }
+        .toast i {
+            margin-right: 12px;
+            font-size: 20px;
+        }
+        .toast span {
+            font-size: 15px;
+            font-weight: 500;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+        }
+        
+        .form-group.has-error .form-control {
+            border-color: #e74c3c;
+        }
+        .form-group.has-error .error-text {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+        .form-group.has-success .form-control {
+            border-color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="search-bar">
+        <form id="searchForm" class="form-inline">
+            <div class="form-group mr-3">
+                <label class="mr-2">用户名:</label>
+                <input type="text" class="form-control" id="searchUsername" placeholder="请输入用户名">
+            </div>
+            <button type="submit" class="btn btn-primary mr-2">
+                <i class="fa fa-search"></i> 查询
+            </button>
+            <button type="button" class="btn btn-secondary mr-2" id="resetBtn">
+                <i class="fa fa-refresh"></i> 重置
+            </button>
+            <button type="button" class="btn btn-success" id="addBtn">
+                <i class="fa fa-plus"></i> 添加管理员
+            </button>
+        </form>
+    </div>
+
+    <div class="table-container">
+        <table class="table table-hover table-bordered" id="dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户名</th>
+                    <th>真实姓名</th>
+                    <th>手机号</th>
+                    <th>邮箱</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th style="width: 180px;">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <div id="pageInfo">共 0 条记录</div>
+            <div id="pagination"></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">添加管理员</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="editId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group" id="formGroupUsername">
+                                    <label>用户名 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editUsername" placeholder="请输入用户名（2-20个字符）">
+                                    <span class="error-text" id="errorUsername"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group" id="formGroupPassword">
+                                    <label>密码 <span id="passwordLabel"></span></label>
+                                    <input type="password" class="form-control" id="editPassword" placeholder="不修改则留空">
+                                    <span class="error-text" id="errorPassword"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>真实姓名</label>
+                                    <input type="text" class="form-control" id="editRealName" placeholder="请输入真实姓名">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group" id="formGroupPhone">
+                                    <label>手机号</label>
+                                    <input type="text" class="form-control" id="editPhone" placeholder="请输入手机号（可选）">
+                                    <span class="error-text" id="errorPhone"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group" id="formGroupEmail">
+                                    <label>邮箱</label>
+                                    <input type="email" class="form-control" id="editEmail" placeholder="请输入邮箱（可选）">
+                                    <span class="error-text" id="errorEmail"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>状态</label>
+                                    <select class="form-control" id="editStatus">
+                                        <option value="1">启用</option>
+                                        <option value="0">禁用</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var currentPage = 1;
+        var pageSize = 10;
+        var isEditMode = false;
+        var isSubmitting = false;
+        var currentToast = null;
+
+        var PHONE_REGEX = /^1[3-9]\d{9}$/;
+        var EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+        var PASSWORD_MIN_LENGTH = 6;
+        var USERNAME_MIN_LENGTH = 2;
+        var USERNAME_MAX_LENGTH = 20;
+
+        function showToast(message, type) {
+            if (currentToast) {
+                currentToast.remove();
+                currentToast = null;
+            }
+            
+            var iconMap = {
+                'success': 'fa-check-circle',
+                'error': 'fa-times-circle',
+                'info': 'fa-info-circle',
+                'warning': 'fa-exclamation-triangle'
+            };
+            
+            var toastHtml = '<div class="toast toast-' + type + '">' +
+                '<i class="fa ' + iconMap[type] + '"></i>' +
+                '<span>' + message + '</span>' +
+                '</div>';
+            
+            var $toast = $(toastHtml);
+            $('#toastContainer').append($toast);
+            currentToast = $toast;
+            
+            setTimeout(function() {
+                $toast.css('animation', 'slideUp 0.3s ease-in');
+                setTimeout(function() {
+                    $toast.remove();
+                    if (currentToast === $toast) {
+                        currentToast = null;
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        function showSuccess(message) {
+            showToast(message, 'success');
+        }
+
+        function showError(message) {
+            showToast(message, 'error');
+        }
+
+        function showFormError(fieldId, message) {
+            $('#formGroup' + fieldId).addClass('has-error');
+            $('#error' + fieldId).text(message);
+        }
+
+        function clearFormError(fieldId) {
+            $('#formGroup' + fieldId).removeClass('has-error');
+            $('#error' + fieldId).text('');
+        }
+
+        function clearAllFormErrors() {
+            clearFormError('Username');
+            clearFormError('Password');
+            clearFormError('Phone');
+            clearFormError('Email');
+        }
+
+        function validateUsername(username) {
+            if (!username || username.trim() === '') {
+                return '用户名不能为空';
+            }
+            if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
+                return '用户名长度必须在' + USERNAME_MIN_LENGTH + '-' + USERNAME_MAX_LENGTH + '个字符之间';
+            }
+            return null;
+        }
+
+        function validatePassword(password, isRequired) {
+            if (isRequired) {
+                if (!password || password === '') {
+                    return '密码不能为空';
+                }
+            }
+            if (password && password.length > 0 && password.length < PASSWORD_MIN_LENGTH) {
+                return '密码长度不能少于' + PASSWORD_MIN_LENGTH + '位';
+            }
+            return null;
+        }
+
+        function validatePhone(phone) {
+            if (!phone || phone === '') {
+                return null;
+            }
+            if (!PHONE_REGEX.test(phone)) {
+                return '手机号格式不正确';
+            }
+            return null;
+        }
+
+        function validateEmail(email) {
+            if (!email || email === '') {
+                return null;
+            }
+            if (!EMAIL_REGEX.test(email)) {
+                return '邮箱格式不正确';
+            }
+            return null;
+        }
+
+        $(function() {
+            loadData();
+            
+            $('#searchForm').submit(function(e) {
+                e.preventDefault();
+                currentPage = 1;
+                loadData();
+            });
+            
+            $('#resetBtn').click(function() {
+                $('#searchUsername').val('');
+                currentPage = 1;
+                loadData();
+            });
+            
+            $('#addBtn').click(function() {
+                isEditMode = false;
+                $('#modalTitle').text('添加管理员');
+                $('#passwordLabel').text('(默认: 123456)');
+                $('#editForm')[0].reset();
+                $('#editId').val('');
+                clearAllFormErrors();
+                $('#editModal').modal('show');
+            });
+            
+            $('#saveBtn').click(function() {
+                if (isSubmitting) {
+                    return;
+                }
+                saveData();
+            });
+            
+            $('#editUsername').on('blur', function() {
+                var error = validateUsername($(this).val());
+                if (error) {
+                    showFormError('Username', error);
+                } else {
+                    clearFormError('Username');
+                }
+            });
+            
+            $('#editPassword').on('blur', function() {
+                var error = validatePassword($(this).val(), !isEditMode);
+                if (error) {
+                    showFormError('Password', error);
+                } else {
+                    clearFormError('Password');
+                }
+            });
+            
+            $('#editPhone').on('blur', function() {
+                var error = validatePhone($(this).val());
+                if (error) {
+                    showFormError('Phone', error);
+                } else {
+                    clearFormError('Phone');
+                }
+            });
+            
+            $('#editEmail').on('blur', function() {
+                var error = validateEmail($(this).val());
+                if (error) {
+                    showFormError('Email', error);
+                } else {
+                    clearFormError('Email');
+                }
+            });
+        });
+
+        function loadData() {
+            var params = {
+                page: currentPage,
+                size: pageSize,
+                username: $('#searchUsername').val()
+            };
+            
+            $.get('/admin/data', params, function(res) {
+                if (res.code === 200) {
+                    renderTable(res.data.records);
+                    renderPagination(res.data.current, res.data.pages, res.data.total);
+                }
+            });
+        }
+
+        function renderTable(data) {
+            var html = '';
+            if (data && data.length > 0) {
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+                    var statusClass = item.status === 1 ? 'status-active' : 'status-inactive';
+                    var statusText = item.status === 1 ? '启用' : '禁用';
+                    
+                    html += '<tr>';
+                    html += '<td>' + item.id + '</td>';
+                    html += '<td>' + (item.username || '-') + '</td>';
+                    html += '<td>' + (item.realName || '-') + '</td>';
+                    html += '<td>' + (item.phone || '-') + '</td>';
+                    html += '<td>' + (item.email || '-') + '</td>';
+                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                    html += '<td>' + formatTime(item.createTime) + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn btn-primary btn-sm mr-1" onclick="editData(' + item.id + ')"><i class="fa fa-edit"></i> 编辑</button>';
+                    html += '<button class="btn btn-danger btn-sm" onclick="deleteData(' + item.id + ')"><i class="fa fa-trash"></i> 删除</button>';
+                    html += '</td>';
+                    html += '</tr>';
+                }
+            } else {
+                html = '<tr><td colspan="8" class="text-center py-5 text-muted">暂无数据</td></tr>';
+            }
+            $('#dataTable tbody').html(html);
+        }
+
+        function renderPagination(page, totalPages, total) {
+            $('#pageInfo').text('共 ' + total + ' 条记录');
+            
+            if (totalPages <= 1) {
+                $('#pagination').html('');
+                return;
+            }
+            
+            var html = '<nav><ul class="pagination">';
+            
+            if (page > 1) {
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="goPage(' + (page - 1) + ')"><i class="fa fa-angle-left"></i></a></li>';
+            }
+            
+            var start = Math.max(1, page - 2);
+            var end = Math.min(totalPages, page + 2);
+            
+            if (start > 1) {
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="goPage(1)">1</a></li>';
+                if (start > 2) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+            
+            for (var i = start; i <= end; i++) {
+                if (i === page) {
+                    html += '<li class="page-item active"><span class="page-link">' + i + '</span></li>';
+                } else {
+                    html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="goPage(' + i + ')">' + i + '</a></li>';
+                }
+            }
+            
+            if (end < totalPages) {
+                if (end < totalPages - 1) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="goPage(' + totalPages + ')">' + totalPages + '</a></li>';
+            }
+            
+            if (page < totalPages) {
+                html += '<li class="page-item"><a class="page-link" href="javascript:void(0)" onclick="goPage(' + (page + 1) + ')"><i class="fa fa-angle-right"></i></a></li>';
+            }
+            
+            html += '</ul></nav>';
+            $('#pagination').html(html);
+        }
+
+        function goPage(page) {
+            currentPage = page;
+            loadData();
+        }
+
+        function editData(id) {
+            isEditMode = true;
+            $('#modalTitle').text('编辑管理员');
+            $('#passwordLabel').text('(不修改则留空)');
+            clearAllFormErrors();
+            
+            $.get('/admin/get/' + id, function(res) {
+                if (res.code === 200 && res.data) {
+                    var data = res.data;
+                    $('#editId').val(data.id);
+                    $('#editUsername').val(data.username || '');
+                    $('#editRealName').val(data.realName || '');
+                    $('#editPhone').val(data.phone || '');
+                    $('#editEmail').val(data.email || '');
+                    $('#editStatus').val(data.status !== null ? data.status : 1);
+                    $('#editPassword').val('');
+                    $('#editModal').modal('show');
+                }
+            });
+        }
+
+        function saveData() {
+            if (isSubmitting) {
+                return;
+            }
+            
+            var id = $('#editId').val();
+            var username = $('#editUsername').val().trim();
+            var password = $('#editPassword').val();
+            var phone = $('#editPhone').val().trim();
+            var email = $('#editEmail').val().trim();
+            
+            clearAllFormErrors();
+            
+            var hasError = false;
+            
+            var usernameError = validateUsername(username);
+            if (usernameError) {
+                showFormError('Username', usernameError);
+                hasError = true;
+            }
+            
+            var passwordError = validatePassword(password, !isEditMode && password.length > 0);
+            if (passwordError) {
+                showFormError('Password', passwordError);
+                hasError = true;
+            }
+            
+            var phoneError = validatePhone(phone);
+            if (phoneError) {
+                showFormError('Phone', phoneError);
+                hasError = true;
+            }
+            
+            var emailError = validateEmail(email);
+            if (emailError) {
+                showFormError('Email', emailError);
+                hasError = true;
+            }
+            
+            if (hasError) {
+                showError('请检查输入的内容');
+                return;
+            }
+            
+            var data = {
+                username: username,
+                password: password,
+                realName: $('#editRealName').val().trim(),
+                phone: phone,
+                email: email,
+                status: parseInt($('#editStatus').val())
+            };
+            
+            var url = id ? '/admin/update' : '/admin/add';
+            if (id) {
+                data.id = parseInt(id);
+            }
+            
+            isSubmitting = true;
+            var $saveBtn = $('#saveBtn');
+            var originalText = $saveBtn.html();
+            $saveBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 保存中...');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if (res.code === 200) {
+                        showSuccess(res.message || '保存成功');
+                        $('#editModal').modal('hide');
+                        loadData();
+                    } else {
+                        showError(res.message || '保存失败');
+                    }
+                },
+                error: function() {
+                    showError('网络错误，请稍后重试');
+                },
+                complete: function() {
+                    isSubmitting = false;
+                    $saveBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        }
+
+        function deleteData(id) {
+            if (confirm('确定要删除这条数据吗？')) {
+                $.post('/admin/delete/' + id, function(res) {
+                    if (res.code === 200) {
+                        showSuccess(res.message || '删除成功');
+                        loadData();
+                    } else {
+                        showError(res.message || '删除失败');
+                    }
+                }).fail(function() {
+                    showError('网络错误，请稍后重试');
+                });
+            }
+        }
+
+        function formatTime(time) {
+            if (!time) return '-';
+            return time.replace('T', ' ').substring(0, 19);
+        }
+    </script>
+</body>
+</html>

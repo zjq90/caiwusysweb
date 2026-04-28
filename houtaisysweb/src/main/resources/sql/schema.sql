@@ -1,0 +1,66 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS caiwu_sys DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+USE caiwu_sys;
+
+-- 管理员表
+DROP TABLE IF EXISTS sys_admin;
+CREATE TABLE sys_admin (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(255) NOT NULL COMMENT '密码',
+    real_name VARCHAR(50) COMMENT '真实姓名',
+    phone VARCHAR(20) COMMENT '手机号',
+    email VARCHAR(100) COMMENT '邮箱',
+    status INT DEFAULT 1 COMMENT '状态：1启用 0禁用',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除：1删除 0未删除'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理员表';
+
+-- 个人用户表
+DROP TABLE IF EXISTS sys_user;
+CREATE TABLE sys_user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(255) NOT NULL COMMENT '密码',
+    real_name VARCHAR(50) COMMENT '真实姓名',
+    gender INT COMMENT '性别：1男 2女',
+    phone VARCHAR(20) COMMENT '手机号',
+    email VARCHAR(100) COMMENT '邮箱',
+    avatar VARCHAR(255) COMMENT '头像',
+    status INT DEFAULT 1 COMMENT '状态：1启用 0禁用',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除：1删除 0未删除'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='个人用户表';
+
+-- 收支类别表
+DROP TABLE IF EXISTS sys_category;
+CREATE TABLE sys_category (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    name VARCHAR(50) NOT NULL COMMENT '类别名称',
+    type INT NOT NULL COMMENT '类型：1收入 2支出',
+    icon VARCHAR(255) COMMENT '图标',
+    sort INT DEFAULT 0 COMMENT '排序',
+    status INT DEFAULT 1 COMMENT '状态：1启用 0禁用',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除：1删除 0未删除'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收支类别表';
+
+-- 财务新闻表
+DROP TABLE IF EXISTS sys_news;
+CREATE TABLE sys_news (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    title VARCHAR(200) NOT NULL COMMENT '新闻标题',
+    summary VARCHAR(500) COMMENT '新闻摘要',
+    content TEXT COMMENT '新闻内容',
+    cover_image VARCHAR(255) COMMENT '封面图片',
+    author VARCHAR(50) COMMENT '作者',
+    view_count INT DEFAULT 0 COMMENT '浏览次数',
+    status INT DEFAULT 1 COMMENT '状态：1发布 0草稿',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted INT DEFAULT 0 COMMENT '逻辑删除：1删除 0未删除'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='财务新闻表';

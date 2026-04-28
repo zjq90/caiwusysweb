@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务后台管理系统 - 登录</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .login-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #495057;
+        }
+        .login-title h3 {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .login-title p {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-control {
+            height: 45px;
+            border-radius: 8px;
+            padding-left: 45px;
+        }
+        .input-group-text {
+            border-radius: 8px 0 0 8px;
+            background: #f8f9fa;
+            border-right: none;
+        }
+        .input-group .form-control {
+            border-left: none;
+        }
+        .btn-login {
+            width: 100%;
+            height: 45px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .alert-box {
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-title">
+            <h3><i class="fa fa-cny"></i> 财务后台管理系统</h3>
+            <p>请登录您的账户</p>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa fa-user"></i></span>
+                    </div>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名" value="admin">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa fa-lock"></i></span>
+                    </div>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码" value="123456">
+                </div>
+            </div>
+            <div class="alert alert-danger alert-box" id="errorAlert" role="alert">
+                <i class="fa fa-exclamation-circle"></i> <span id="errorMessage"></span>
+            </div>
+            <button type="submit" class="btn btn-primary btn-login" id="loginBtn">
+                <i class="fa fa-sign-in"></i> 登 录
+            </button>
+        </form>
+        <div class="text-center mt-3">
+            <small class="text-muted">默认账号: admin / 123456</small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(function() {
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+                var username = $('#username').val().trim();
+                var password = $('#password').val().trim();
+                
+                if (!username) {
+                    showError('请输入用户名');
+                    return;
+                }
+                if (!password) {
+                    showError('请输入密码');
+                    return;
+                }
+                
+                var $btn = $('#loginBtn');
+                $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> 登录中...');
+                hideError();
+                
+                $.post('/admin/login', {username: username, password: password}, function(res) {
+                    if (res.code === 200) {
+                        location.href = '/';
+                    } else {
+                        showError(res.message || '登录失败');
+                        $btn.prop('disabled', false).html('<i class="fa fa-sign-in"></i> 登 录');
+                    }
+                }).fail(function() {
+                    showError('服务器错误，请稍后重试');
+                    $btn.prop('disabled', false).html('<i class="fa fa-sign-in"></i> 登 录');
+                });
+            });
+            
+            function showError(msg) {
+                $('#errorMessage').text(msg);
+                $('#errorAlert').fadeIn();
+            }
+            
+            function hideError() {
+                $('#errorAlert').fadeOut();
+            }
+        });
+    </script>
+</body>
+</html>
